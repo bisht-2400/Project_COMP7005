@@ -33,4 +33,4 @@ def decode(packet):
 c = Packet(PacketType.ACK, 1, 1, 5, 5)
 c = encode(c)
 print(c)
-print(decode(c).packetType)
+print(decode(c).seqNum)
