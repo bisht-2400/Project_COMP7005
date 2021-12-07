@@ -1,12 +1,14 @@
 import enum
+import pickle
 
 
 class PacketType(enum.Enum):
-    SYN: 0
-    SYN_ACK: 1
-    ACK: 2
-    DATA: 3
-    FIN: 4
+    SYN = 0
+    SYN_ACK = 1
+    ACK = 2
+    DATA = 3
+    FIN = 4
+    EOT = 5
 
 
 class Packet:
@@ -20,3 +22,15 @@ class Packet:
             self.ackNum = None
             self.seqNum = 0
             self.data = None
+
+
+def encode(packet):
+    return pickle.dumps(packet)
+
+def decode(packet):
+    return pickle.loads(packet)
+
+c = Packet(PacketType.ACK, 1, 1, 5, 5)
+c = encode(c)
+print(c)
+print(decode(c).packetType)
