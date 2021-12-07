@@ -12,25 +12,39 @@ class PacketType(enum.Enum):
 
 
 class Packet:
-    def __init__(self, packet_type, seq_num, ack_num, window_size, data):
+    def __init__(self, packet_type, seq_num, ack_num):
         self.packetType = packet_type
         self.ackNum = ack_num
         self.seqNum = seq_num
-        self.data = data
-        self.windowSize = window_size
         if self.packetType == PacketType.SYN:
             self.ackNum = None
             self.seqNum = 0
-            self.data = None
+        self.windowSize = None
+        self.data = None
+
+    def set_window_size(self, window_size):
+        self.windowSize = window_size
+
+    def set_data(self, data):
+        self.data = data
+
+    def __str__(self):
+        return f"Packet Type: {self.packetType},\n" \
+               f"Sequence Number: {self.seqNum},\n" \
+               f"Ack Number: {self.ackNum}" \
+
+
 
 
 def encode(packet):
     return pickle.dumps(packet)
 
+
 def decode(packet):
     return pickle.loads(packet)
 
-c = Packet(PacketType.ACK, 1, 1, 5, 5)
-c = encode(c)
-print(c)
-print(decode(c).seqNum)
+
+# c = Packet(PacketType.ACK, 1, 1)
+# c = encode(c)
+# print(c)
+# print(decode(c))
