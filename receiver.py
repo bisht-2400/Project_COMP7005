@@ -10,6 +10,8 @@ class Receiver:
         self.sender_port = sender_port
         self.seq_num = 0
         self.sock = None
+        self.all_packet = []
+        self.fin_recv = False
 
     def get_sender_ip(self):
         return self.sender_ip
@@ -54,6 +56,34 @@ class Receiver:
         self.sock.sendto(ack_packet, self.get_sender_asTuple())
         print(f"ACK sent for packet SEQUENCE NUMBER: {packet.seqNum}")
 
+    def send_eot(self):
+        eot_packet = encode(Packet(PacketType.EOT, None, None))
+        self.sock.sendto(eot_packet, self.get_sender_asTuple())
+        print(f"EOT sent")
+
+    def wait_for_packets(self):
+        packet_recv = []
+        while True:
+            packet = decode(self.sock.recv(1024))
+            while packet.packetType == PacketType.DATA:
+                print(f"Received Packet {packet} from {self.get_sender_asTuple()}")
+                packet_recv.append(packet)
+                packet = decode(self.sock.recv(1024))
+            if packet.packetType == PacketType.FIN:
+                print("FIN Received")
+                self.fin_recv = True
+            break
+        self.duplicate_check(packet_recv)
+
+    def duplicate_check(self, packet_list):
+        for i in packet_list:
+            self.send_ack(i)
+            for j in self.all_packet:
+                if i != j:
+                    self.all_packet.append(i)
+                print(f"Duplicate Detected:\n{j}")
+            self.send_eot()
+
     def __str__(self):
         return f"Sender IP and Address {self.get_sender_asTuple()}"
 
@@ -79,9 +109,9 @@ def main():
     # wait for syn/ack
     receiver.wait_for_synack()
 
-
     # wait for packets
-    # send_ack()
+    while receiver.fin_recv is False:
+        receiver.wait_for_packets()
 
 
 if __name__ == "__main__":
