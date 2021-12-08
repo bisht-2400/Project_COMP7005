@@ -93,7 +93,7 @@ class Receiver:
 
 
 def main():
-    NETWORK_PORT = 4440
+    NETWORK_PORT = 10000
     NETWORK_IP = "localhost"
     SERVER_PORT = 1
     SERVER_IP = 1

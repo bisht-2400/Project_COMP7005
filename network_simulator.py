@@ -34,15 +34,10 @@ class NetworkSimulator:
     def get_client_port(self):
         return self.client_port
 
-    def set_server_sock(self, sock):
-        self.server_sock = sock
-
-    def set_client_sock(self, sock):
-        self.client_sock = sock
-
     def get_packets(self, sock):
         while True:
-            packet = decode(sock.recv(1024))
+            packet = sock.recv(1024)
+            packet = decode(packet)
             while True:
                 print(f"Received Packet {packet} from {packet.endpoint_ip, packet.endpoint_port}")
                 if packet.packetType == PacketType.DATA and dropping_chances(self.packet_loss_percent):
@@ -62,12 +57,12 @@ class NetworkSimulator:
 
 
 def main():
-    NETWORK_PORT = 4440
+    NETWORK_PORT = 10000
     NETWORK_IP = "localhost"
-    SERVER_PORT = 1
-    SERVER_IP = 1
-    CLIENT_PORT = 1
-    CLIENT_IP = 1
+    SERVER_PORT = 10003
+    SERVER_IP = "localhost"
+    CLIENT_PORT = 10002
+    CLIENT_IP = "localhost"
     LOSS = 50
 
     net_sim = NetworkSimulator(SERVER_IP, SERVER_PORT, CLIENT_IP, CLIENT_PORT, LOSS)
@@ -75,11 +70,15 @@ def main():
     client_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     server_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-    server_sock.bind((net_sim.get_server_ip(), net_sim.get_client_port()))
-    client_sock.bind((net_sim.get_client_ip(), net_sim.get_client_port()))
+    # server_sock.bind((net_sim.get_server_ip(), net_sim.get_server_port()))
+    # client_sock.bind((net_sim.get_client_ip(), net_sim.get_client_port()))
 
     while net_sim.fin_recv is False:
         net_sim.get_packets(client_sock)
         net_sim.send_packets(server_sock)
         net_sim.get_packets(server_sock)
         net_sim.send_packets(client_sock)
+
+
+if __name__ == "__main__":
+    main()
