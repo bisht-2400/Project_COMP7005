@@ -5,13 +5,15 @@ from packet import PacketType, Packet, encode, decode
 
 
 class Receiver:
-    def __init__(self, sender_ip, sender_port):
+    def __init__(self, sender_ip, sender_port, server_ip, server_port):
         self.sender_ip = sender_ip
         self.sender_port = sender_port
         self.seq_num = 0
         self.sock = None
         self.all_packet = []
         self.fin_recv = False
+        self.server_ip = server_ip
+        self.server_port = server_port
 
     def get_sender_ip(self):
         return self.sender_ip
@@ -32,10 +34,11 @@ class Receiver:
         self.seq_num += 1
 
     def send_syn(self):
-        syn_packet = encode(Packet(PacketType.SYN, self.seq_num, 0))
+        syn_packet = encode(Packet(PacketType.SYN, self.seq_num, 0, self.server_ip, self.server_port))
         try:
             self.sock.sendto(syn_packet, self.get_sender_asTuple())
             print("SYN sent")
+            self.send_eot()
         except Exception as e:
             print(e)
 
@@ -44,20 +47,21 @@ class Receiver:
             packet = decode(self.sock.recv(1024))
             if packet.packetType == PacketType.SYN_ACK:
                 print("SYN/ACK received")
-                self.increment_seq_num()
                 self.send_ack(packet)  # send ack for the received SYN/ACK
                 break
             else:
                 time.sleep(5)
                 self.send_syn()
+        self.send_eot()
 
     def send_ack(self, packet):
-        ack_packet = encode(Packet(PacketType.ACK, self.get_seq_num(), packet.seqNum))
+        ack_packet = encode(Packet(PacketType.ACK, self.get_seq_num(), packet.seqNum, self.server_ip, self.server_port))
         self.sock.sendto(ack_packet, self.get_sender_asTuple())
+        self.increment_seq_num()
         print(f"ACK sent for packet SEQUENCE NUMBER: {packet.seqNum}")
 
     def send_eot(self):
-        eot_packet = encode(Packet(PacketType.EOT, None, None))
+        eot_packet = encode(Packet(PacketType.EOT, None, None, self.server_ip, self.server_port))
         self.sock.sendto(eot_packet, self.get_sender_asTuple())
         print(f"EOT sent")
 
@@ -96,7 +100,7 @@ def main():
     CLIENT_PORT = 1
     CLIENT_IP = 1
 
-    receiver = Receiver(NETWORK_IP, NETWORK_PORT)
+    receiver = Receiver(NETWORK_IP, NETWORK_PORT, SERVER_PORT, SERVER_IP)
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.bind((receiver.get_sender_ip(), receiver.get_sender_port()))
