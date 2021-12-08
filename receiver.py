@@ -38,6 +38,7 @@ class Receiver:
         try:
             self.sock.sendto(syn_packet, self.get_sender_asTuple())
             print("SYN sent")
+            self.increment_seq_num()
             self.send_eot()
         except Exception as e:
             print(e)
@@ -93,7 +94,7 @@ class Receiver:
 
 
 def main():
-    NETWORK_PORT = 10000
+    NETWORK_PORT = 10001
     NETWORK_IP = "localhost"
     SERVER_PORT = 1
     SERVER_IP = 1
@@ -103,7 +104,7 @@ def main():
     receiver = Receiver(NETWORK_IP, NETWORK_PORT, SERVER_PORT, SERVER_IP)
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock.bind((receiver.get_sender_ip(), receiver.get_sender_port()))
+    # sock.bind((receiver.get_sender_ip(), receiver.get_sender_port()))
 
     receiver.set_sock(sock)
 

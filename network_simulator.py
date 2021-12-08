@@ -36,8 +36,10 @@ class NetworkSimulator:
 
     def get_packets(self, sock):
         while True:
+            print("Waiting")
             packet = sock.recv(1024)
             packet = decode(packet)
+            print("Done waiting", packet)
             while True:
                 print(f"Received Packet {packet} from {packet.endpoint_ip, packet.endpoint_port}")
                 if packet.packetType == PacketType.DATA and dropping_chances(self.packet_loss_percent):
@@ -47,8 +49,8 @@ class NetworkSimulator:
                     if packet.packetType == PacketType.FIN:
                         self.fin_recv = True
                     self.to_be_transmitted.append(packet)
-                    print("EOT received")
-                    break
+                    print("EOT received", self.to_be_transmitted)
+                    return False
 
     def send_packets(self, sock):
         for i in self.to_be_transmitted:
@@ -59,10 +61,10 @@ class NetworkSimulator:
 def main():
     NETWORK_PORT = 10000
     NETWORK_IP = "localhost"
-    SERVER_PORT = 10003
+    SERVER_PORT = 10000
     SERVER_IP = "localhost"
-    CLIENT_PORT = 10002
-    CLIENT_IP = "localhost"
+    CLIENT_PORT = 10001
+    CLIENT_IP = "127.0.0.1"
     LOSS = 50
 
     net_sim = NetworkSimulator(SERVER_IP, SERVER_PORT, CLIENT_IP, CLIENT_PORT, LOSS)
@@ -70,8 +72,8 @@ def main():
     client_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     server_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-    # server_sock.bind((net_sim.get_server_ip(), net_sim.get_server_port()))
-    # client_sock.bind((net_sim.get_client_ip(), net_sim.get_client_port()))
+    server_sock.bind((net_sim.get_server_ip(), net_sim.get_server_port()))
+    client_sock.bind((CLIENT_IP, CLIENT_PORT))
 
     while net_sim.fin_recv is False:
         net_sim.get_packets(client_sock)
