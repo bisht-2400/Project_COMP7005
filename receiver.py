@@ -5,38 +5,39 @@ from packet import PacketType, Packet, encode, decode
 
 
 class Receiver:
-    def __init__(self, sender_ip, sender_port, server_ip, server_port):
-        self.sender_ip = sender_ip
-        self.sender_port = sender_port
+    def __init__(self, network_ip, network_port, transmitter_ip, transmitter_port):
+        self.network_ip = network_ip
+        self.network_port = network_port
         self.seq_num = 0
         self.sock = None
         self.all_packet = []
         self.fin_recv = False
-        self.server_ip = server_ip
-        self.server_port = server_port
+        self.transmitter_ip = transmitter_ip
+        self.transmitter_port = transmitter_port
 
-    def get_sender_ip(self):
-        return self.sender_ip
+    def get_network_ip(self):
+        return self.network_ip
 
     def set_sock(self, sock):
         self.sock = sock
+        self.sock.bind(("localhost", 10000))
 
-    def get_sender_port(self):
-        return self.sender_port
+    def get_network_port(self):
+        return self.network_port
 
     def get_seq_num(self):
         return self.seq_num
 
-    def get_sender_asTuple(self):
-        return self.sender_ip, self.sender_port
+    def get_network_asTuple(self):
+        return self.network_ip, self.network_port
 
     def increment_seq_num(self):
         self.seq_num += 1
 
     def send_syn(self):
-        syn_packet = encode(Packet(PacketType.SYN, self.seq_num, 0, self.server_ip, self.server_port))
+        syn_packet = encode(Packet(PacketType.SYN, self.seq_num, 0, self.transmitter_ip, self.transmitter_port))
         try:
-            self.sock.sendto(syn_packet, self.get_sender_asTuple())
+            self.sock.sendto(syn_packet, self.get_network_asTuple())
             print("SYN sent")
             self.increment_seq_num()
             self.send_eot()
@@ -56,14 +57,14 @@ class Receiver:
         self.send_eot()
 
     def send_ack(self, packet):
-        ack_packet = encode(Packet(PacketType.ACK, self.get_seq_num(), packet.seqNum, self.server_ip, self.server_port))
-        self.sock.sendto(ack_packet, self.get_sender_asTuple())
+        ack_packet = encode(Packet(PacketType.ACK, self.get_seq_num(), packet.seqNum, self.transmitter_ip, self.transmitter_port))
+        self.sock.sendto(ack_packet, self.get_network_asTuple())
         self.increment_seq_num()
         print(f"ACK sent for packet SEQUENCE NUMBER: {packet.seqNum}")
 
     def send_eot(self):
-        eot_packet = encode(Packet(PacketType.EOT, None, None, self.server_ip, self.server_port))
-        self.sock.sendto(eot_packet, self.get_sender_asTuple())
+        eot_packet = encode(Packet(PacketType.EOT, None, None, self.transmitter_ip, self.transmitter_port))
+        self.sock.sendto(eot_packet, self.get_network_asTuple())
         print(f"EOT sent")
 
     def wait_for_packets(self):
@@ -71,7 +72,7 @@ class Receiver:
         while True:
             packet = decode(self.sock.recv(1024))
             while packet.packetType == PacketType.DATA:
-                print(f"Received Packet {packet} from {self.get_sender_asTuple()}")
+                print(f"Received Packet {packet} from {self.get_network_asTuple()}")
                 packet_recv.append(packet)
                 packet = decode(self.sock.recv(1024))
             if packet.packetType == PacketType.FIN:
@@ -90,21 +91,18 @@ class Receiver:
             self.send_eot()
 
     def __str__(self):
-        return f"Sender IP and Address {self.get_sender_asTuple()}"
+        return f"Sender IP and Address {self.get_network_asTuple()}"
 
 
 def main():
-    NETWORK_PORT = 10001
+    NETWORK_PORT = 10004
     NETWORK_IP = "localhost"
-    SERVER_PORT = 1
-    SERVER_IP = 1
-    CLIENT_PORT = 1
-    CLIENT_IP = 1
+    SERVER_PORT = 10005
+    SERVER_IP = "localhost"
 
-    receiver = Receiver(NETWORK_IP, NETWORK_PORT, SERVER_PORT, SERVER_IP)
+    receiver = Receiver(NETWORK_IP, NETWORK_PORT, SERVER_IP, SERVER_PORT)
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    # sock.bind((receiver.get_sender_ip(), receiver.get_sender_port()))
 
     receiver.set_sock(sock)
 
