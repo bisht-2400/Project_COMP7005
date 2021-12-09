@@ -1,16 +1,16 @@
+import random
 import socket
 import threading
-from random import randrange
 
 from packet import PacketType, Packet, encode, decode
 
 
 def dropping_chances(percent):
-    value = 0
-    value *= 100
-    if value < percent:
-        return True
-    return False
+    rand = random.random() * 100
+
+    if rand < percent:
+        return False
+    return True
 
 
 class NetworkSimulator:
@@ -37,26 +37,34 @@ class NetworkSimulator:
     def wait_for_packets(self, sock):
         while True:
             print("Waiting")
-            packet = sock.recv(1024)
+            packet, addr = sock.recvfrom(1024)
             packet = decode(packet)
-            print("Done waiting", packet)
             while True:
-                print(f"Received Packet {packet} from {packet.endpoint_ip, packet.endpoint_port}")
-                if packet.packetType == PacketType.DATA and dropping_chances(self.packet_loss_percent):
+                print(f"Received Packet {packet} from {addr}")
+                dropped = dropping_chances(self.packet_loss_percent)
+                if packet.packetType == PacketType.DATA and dropped is False:
                     self.to_be_transmitted.append(packet)
-                self.to_be_transmitted.append(packet)
-                packet = decode(sock.recv(1024))
+                if packet.packetType == PacketType.DATA and dropped:
+                    packet, addr = sock.recvfrom(1024)
+                    packet = decode(packet)
+                    print(f"PACKET DROPPED !!")
+                if packet.packetType == PacketType.SYN or packet.packetType == PacketType.ACK or packet.packetType == PacketType.SYN_ACK:
+                    self.to_be_transmitted.append(packet)
                 if packet.packetType == PacketType.FIN or packet.packetType == PacketType.EOT:
+                    self.to_be_transmitted.append(packet)
                     if packet.packetType == PacketType.FIN:
                         self.fin_recv = True
-                    self.to_be_transmitted.append(packet)
-                    print("EOT received", self.to_be_transmitted)
-                    return False
+                    else:
+                        print("EOT received")
+                        return False
+                packet, addr = sock.recvfrom(1024)
+                packet = decode(packet)
 
     def send_packets(self, sock):
         for i in self.to_be_transmitted:
             sock.sendto(encode(i), (i.endpoint_ip, i.endpoint_port))
             print(f"Sending {i} to {i.endpoint_ip, i.endpoint_port}")
+            self.to_be_transmitted.remove(i)
 
 
 def main():

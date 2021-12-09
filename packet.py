@@ -31,9 +31,7 @@ class Packet:
         self.data = data
 
     def __str__(self):
-        return f"Packet Type: {self.packetType}, " \
-               f"Sequence Number: {self.seqNum}, " \
-               f"Ack Number: {self.ackNum} \n"
+        return f"Type: {self.packetType.name},SeqNum: {self.seqNum},AckNum: {self.ackNum}"
 
 
 def encode(packet):

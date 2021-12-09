@@ -78,7 +78,8 @@ class Receiver:
             if packet.packetType == PacketType.FIN:
                 print("FIN Received")
                 self.fin_recv = True
-            break
+            elif packet.packetType == PacketType.EOT:
+                break
         self.duplicate_check(packet_recv)
 
     def duplicate_check(self, packet_list):
@@ -88,7 +89,7 @@ class Receiver:
                 if i != j:
                     self.all_packet.append(i)
                 print(f"Duplicate Detected:\n{j}")
-            self.send_eot()
+        self.send_eot()
 
     def __str__(self):
         return f"Sender IP and Address {self.get_network_asTuple()}"
